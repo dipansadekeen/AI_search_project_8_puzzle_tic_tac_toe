@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Search Lab — Tests</title>
+  <style>
+    body { background:#0E1116; color:#E6EDF3; font-family: ui-monospace, Menlo, Consolas, monospace; padding:28px; }
+    h1 { font-size:18px; letter-spacing:.1em; }
+    .pass { color:#4FD6C8; } .fail { color:#F2667C; }
+    .grp { color:#8B98A5; margin-top:18px; text-transform:uppercase; letter-spacing:.12em; font-size:12px; }
+    #summary { margin-top:22px; font-size:16px; }
+    div.line { padding:2px 0; }
+  </style>
+</head>
+<body>
+  <h1>AI Search Lab — algorithm tests</h1>
+  <div id="out"></div>
+  <div id="summary"></div>
+
+  <!-- logic only; no DOM/UI files needed for tests -->
+  <script src="../js/shared/namespace.js"></script>
+  <script src="../js/shared/utils.js"></script>
+  <script src="../js/shared/priority_queue.js"></script>
+  <script src="../js/module_a/puzzle.js"></script>
+  <script src="../js/module_a/solvers/_common.js"></script>
+  <script src="../js/module_a/solvers/bfs.js"></script>
+  <script src="../js/module_a/solvers/dijkstra.js"></script>
+  <script src="../js/module_a/solvers/astar.js"></script>
+  <script src="../js/module_b/game.js"></script>
+  <script src="../js/module_b/minimax.js"></script>
+  <script src="../js/module_b/alphabeta.js"></script>
+
+  <script>
+  (function () {
+    var out = document.getElementById('out');
+    var pass = 0, fail = 0;
+    function group(name) { var d = document.createElement('div'); d.className = 'grp'; d.textContent = name; out.appendChild(d); }
+    function check(name, cond, extra) {
+      var d = document.createElement('div'); d.className = 'line ' + (cond ? 'pass' : 'fail');
+      d.textContent = (cond ? '  PASS  ' : '  FAIL  ') + name + (extra ? '   ' + extra : '');
+      out.appendChild(d);
+      cond ? pass++ : fail++;
+    }
+
+    var P = Lab.moduleA.Puzzle;
+    var TEST = '813402765';
+
+    function len(r) { return r.path.length - 1; }
+    function legal(pth) {
+      for (var i = 1; i < pth.length; i++) {
+        var succ = P.neighbors(pth[i - 1]).map(function (s) { return s.state; });
+        if (succ.indexOf(pth[i]) === -1) return false;
+      }
+      return pth[pth.length - 1] === P.GOAL;
+    }
+
+    group('Puzzle model');
+    check('manhattan(goal) === 0', P.manhattan(P.GOAL) === 0);
+    check('test puzzle is solvable', P.isSolvable(TEST));
+    check('a known-unsolvable state is rejected', !P.isSolvable('123456870'));
+    check('goal (corner blank) has 2 neighbors', P.neighbors(P.GOAL).length === 2);
+
+    var bfs = Lab.moduleA.solvers.bfs(TEST);
+    group('BFS (blind search)');
+    check('finds optimal depth 14', len(bfs) === 14, '(nodes=' + bfs.nodesExpanded + ')');
+    check('returns a legal path ending at goal', legal(bfs.path));
+    check('expands thousands of nodes (spec ballpark)', bfs.nodesExpanded > 1000 && bfs.nodesExpanded < 20000, '(' + bfs.nodesExpanded + ')');
+
+    var dij = Lab.moduleA.solvers.dijkstra(TEST);
+    group('Dijkstra');
+    check('finds optimal depth 14', len(dij) === 14, '(nodes=' + dij.nodesExpanded + ')');
+    check('returns a legal path ending at goal', legal(dij.path));
+    check('cost-optimal == BFS depth', len(dij) === len(bfs));
+
+    var ast = Lab.moduleA.solvers.astar(TEST);
+    group('A* (Manhattan)');
+    check('finds optimal depth 14', len(ast) === 14, '(nodes=' + ast.nodesExpanded + ')');
+    check('returns a legal path ending at goal', legal(ast.path));
+    check('expands far fewer nodes than BFS', ast.nodesExpanded < bfs.nodesExpanded / 5, '(A*=' + ast.nodesExpanded + ' BFS=' + bfs.nodesExpanded + ')');
+    check('misplaced-tiles heuristic also solves optimally', len(Lab.moduleA.solvers.astar(TEST, P.misplaced)) === 14);
+
+    var G = Lab.moduleB.Game;
+    group('Tic-Tac-Toe model');
+    check('detects a winning row', G.winner(['X','X','X',null,null,null,null,null,null]) === 'X');
+    check('detects a winning diagonal', G.winner(['O',null,null,null,'O',null,null,null,'O']) === 'O');
+    check('full mixed board is a draw (no winner)', G.winner(['X','O','X','X','O','O','O','X','X']) === null);
+
+    var empty = G.emptyBoard();
+    var mm = Lab.moduleB.minimax(empty, 'X');
+    var ab = Lab.moduleB.alphabeta(empty, 'X');
+    group('Minimax');
+    check('first move from empty is a draw with optimal play', mm.score === 0);
+    check('explores the full game tree (549,946 nodes)', mm.nodes === 549946, '(' + mm.nodes + ')');
+    check('chooses a legal opening cell', mm.move >= 0 && mm.move <= 8);
+
+    group('Alpha-Beta pruning');
+    check('agrees with Minimax on score', ab.score === mm.score);
+    check('explores no more nodes than Minimax', ab.nodes <= mm.nodes, '(AB=' + ab.nodes + ')');
+    check('actually prunes (fewer nodes than Minimax)', ab.nodes < mm.nodes, '(rate=' + ((1 - ab.nodes / mm.nodes) * 100).toFixed(1) + '%)');
+
+    var s = document.getElementById('summary');
+    s.className = fail === 0 ? 'pass' : 'fail';
+    s.textContent = pass + ' passed, ' + fail + ' failed.';
+  })();
+  </script>
+</body>
+</html>

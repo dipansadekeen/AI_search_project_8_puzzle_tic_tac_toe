@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Search Lab</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/module_a.css">
+  <link rel="stylesheet" href="css/module_b.css">
+</head>
+<body class="theme-a">
+
+  <header class="topbar">
+    <div class="brand"><b>AI Search</b> <span class="dot">/</span> Lab</div>
+    <nav class="tabs" role="tablist">
+      <button class="tab tab-a" role="tab" data-target="module-a" aria-selected="true">
+        <span class="swatch"></span>8-Puzzle
+      </button>
+      <button class="tab tab-b" role="tab" data-target="module-b" aria-selected="false">
+        <span class="swatch"></span>Tic-Tac-Toe
+      </button>
+    </nav>
+  </header>
+
+  <!-- ============ MODULE A: 8-PUZZLE ============ -->
+  <section class="panel active" id="module-a">
+    <h1 class="module-title">8-Puzzle Solver <span class="kind">single-agent search</span></h1>
+    <p class="module-sub">
+      Slide tiles into the gap to reach the goal. Or pick a search algorithm and watch the
+      optimal solution play out one move at a time. Blind search, Dijkstra, and A* each report
+      how many states they expand to reach the same answer.
+    </p>
+
+    <div class="stage">
+      <div class="puzzle-wrap">
+        <div class="puzzle-board" aria-label="8-puzzle board"></div>
+        <div class="goal-preview">
+          goal
+          <div class="mini-grid">
+            <div>1</div><div>2</div><div>3</div>
+            <div>4</div><div>5</div><div>6</div>
+            <div>7</div><div>8</div><div class="blank"></div>
+          </div>
+        </div>
+        <div class="solved-banner" id="a-banner"></div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>Solve</h3>
+          <div class="row">
+            <select class="btn" id="a-algo">
+              <option value="bfs">Blind search (BFS)</option>
+              <option value="dijkstra">Dijkstra</option>
+              <option value="astar" selected>A* (Manhattan)</option>
+            </select>
+            <button class="btn primary" id="a-play">Solve &amp; play</button>
+          </div>
+          <div class="row">
+            <button class="btn" id="a-back">&laquo; Step</button>
+            <button class="btn" id="a-step">Step &raquo;</button>
+            <button class="btn" id="a-pause">Pause</button>
+            <span class="btn-label">Speed</span>
+            <input type="range" id="a-speed" min="40" max="680" value="380">
+          </div>
+          <div class="row"><div class="status" id="a-status"></div></div>
+        </div>
+
+        <div class="card">
+          <h3>Puzzle</h3>
+          <div class="row">
+            <button class="btn" id="a-shuffle">Shuffle (solvable)</button>
+            <button class="btn" id="a-test">Load test puzzle</button>
+          </div>
+          <div class="row">
+            <button class="btn" id="a-upload">Upload image&hellip;</button>
+            <button class="btn" id="a-numbers">Use numbers</button>
+            <input type="file" id="a-file" accept="image/png,image/jpeg">
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Performance dashboard</h3>
+          <div id="a-dashboard"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODULE B: TIC-TAC-TOE ============ -->
+  <section class="panel" id="module-b">
+    <h1 class="module-title">Tic-Tac-Toe <span class="kind">adversarial search</span></h1>
+    <p class="module-sub">
+      Play against a perfect AI, or watch two AIs play each other. The AI uses Minimax or
+      Alpha-Beta pruning &mdash; both choose the same move, but the dashboard shows how many
+      fewer nodes pruning needs to explore.
+    </p>
+
+    <div class="stage">
+      <div class="ttt-wrap">
+        <div class="ttt-board" aria-label="tic-tac-toe board"></div>
+        <div class="ttt-result" id="b-result"></div>
+        <div class="legend"><span><span class="x">X</span> moves first</span><span><span class="o">O</span> moves second</span></div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>Game</h3>
+          <div class="row">
+            <span class="btn-label">Mode</span>
+            <select class="btn" id="b-mode">
+              <option value="hva" selected>Human vs AI</option>
+              <option value="ava">AI vs AI</option>
+              <option value="hvh">Human vs Human</option>
+            </select>
+          </div>
+          <div class="row">
+            <span class="btn-label">AI uses</span>
+            <select class="btn" id="b-algo">
+              <option value="alphabeta" selected>Alpha-Beta</option>
+              <option value="minimax">Minimax</option>
+            </select>
+            <button class="btn primary" id="b-reset">New game</button>
+          </div>
+          <div class="row"><div class="status" id="b-status"></div></div>
+        </div>
+
+        <div class="card">
+          <h3>Performance dashboard</h3>
+          <div id="b-dashboard"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="note">runs from a double-clicked index.html &middot; no build, no network</footer>
+
+  <!-- Classic scripts, loaded in dependency order.
+       (No ES modules: those are blocked from file:// in Chrome.) -->
+  <script src="js/shared/namespace.js"></script>
+  <script src="js/shared/utils.js"></script>
+  <script src="js/shared/priority_queue.js"></script>
+  <script src="js/shared/dashboard.js"></script>
+
+  <script src="js/module_a/puzzle.js"></script>
+  <script src="js/module_a/solvers/_common.js"></script>
+  <script src="js/module_a/solvers/bfs.js"></script>
+  <script src="js/module_a/solvers/dijkstra.js"></script>
+  <script src="js/module_a/solvers/astar.js"></script>
+  <script src="js/module_a/image_slicer.js"></script>
+  <script src="js/module_a/animation.js"></script>
+  <script src="js/module_a/ui_a.js"></script>
+
+  <script src="js/module_b/game.js"></script>
+  <script src="js/module_b/minimax.js"></script>
+  <script src="js/module_b/alphabeta.js"></script>
+  <script src="js/module_b/ui_b.js"></script>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+/* ============================================================
+   Module A — 8-Puzzle board & sliding tiles
+   ============================================================ */
+
+.puzzle-wrap { display: flex; flex-direction: column; align-items: center; }
+
+.puzzle-board {
+  --cell: 96px;
+  position: relative;
+  width: calc(var(--cell) * 3 + 12px);
+  height: calc(var(--cell) * 3 + 12px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+@media (max-width: 420px) { .puzzle-board { --cell: 84px; } }
+
+.tile {
+  position: absolute;
+  width: var(--cell); height: var(--cell);
+  /* tiles are positioned by translate; the 6px = board padding */
+  top: 6px; left: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 34px; font-weight: 600;
+  color: var(--ink);
+  background: var(--accent-a);
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  background-size: cover; background-position: center;
+  cursor: pointer; user-select: none;
+  transition: transform .18s cubic-bezier(.4,.0,.2,1), box-shadow .15s;
+  will-change: transform;
+}
+.tile.image { color: transparent; }
+.tile.movable:hover { box-shadow: 0 0 0 2px var(--accent-a), 0 0 16px rgba(79,214,200,.4); }
+.tile.locked { cursor: default; }
+.puzzle-board.no-anim .tile { transition: none; }
+.tile .num-badge {
+  position: absolute; bottom: 4px; right: 6px;
+  font-size: 12px; color: var(--ink);
+  background: rgba(255,255,255,.7); border-radius: 4px; padding: 0 4px;
+}
+
+.goal-preview {
+  margin-top: 14px; display: flex; align-items: center; gap: 10px;
+  color: var(--muted); font-family: var(--mono); font-size: 11px;
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.mini-grid {
+  display: grid; grid-template-columns: repeat(3, 14px);
+  grid-template-rows: repeat(3, 14px); gap: 2px;
+}
+.mini-grid div {
+  background: var(--surface-2); border-radius: 2px;
+  font-size: 8px; color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+}
+.mini-grid div.blank { background: transparent; }
+
+.solved-banner {
+  margin-top: 14px; font-family: var(--mono); font-size: 13px;
+  color: var(--accent-a); letter-spacing: .08em;
+  opacity: 0; transition: opacity .3s;
+}
+.solved-banner.show { opacity: 1; }

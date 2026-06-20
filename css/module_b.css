@@ -1,0 +1,46 @@
+/* ============================================================
+   Module B — Tic-Tac-Toe board
+   ============================================================ */
+
+.ttt-wrap { display: flex; flex-direction: column; align-items: center; }
+
+.ttt-board {
+  display: grid;
+  grid-template-columns: repeat(3, 96px);
+  grid-template-rows: repeat(3, 96px);
+  gap: 8px;
+  background: var(--border);
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+@media (max-width: 420px) { .ttt-board { grid-template-columns: repeat(3, 84px); grid-template-rows: repeat(3, 84px); } }
+
+.ttt-cell {
+  background: var(--surface);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 52px; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s, transform .05s;
+}
+.ttt-cell:hover.clickable { background: var(--surface-2); box-shadow: 0 0 0 2px var(--accent-b); }
+.ttt-cell.x { color: var(--accent-b); }
+.ttt-cell.o { color: var(--accent-a); }
+.ttt-cell.win { background: rgba(240,168,92,.18); box-shadow: inset 0 0 0 2px var(--accent-b); }
+.ttt-cell.placed { animation: pop .18s ease-out; }
+@keyframes pop { from { transform: scale(.6); opacity: .2; } to { transform: scale(1); opacity: 1; } }
+
+.ttt-result {
+  margin-top: 16px; font-family: var(--mono); font-size: 16px;
+  letter-spacing: .06em; min-height: 1.4em; color: var(--text);
+}
+.ttt-result .x { color: var(--accent-b); }
+.ttt-result .o { color: var(--accent-a); }
+
+.legend {
+  display: flex; gap: 18px; margin-top: 12px;
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+}
+.legend .x { color: var(--accent-b); }
+.legend .o { color: var(--accent-a); }
