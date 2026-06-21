@@ -4,6 +4,8 @@
 (function () {
   var S = Lab.shared;
 
+  // Activates a module panel and its corresponding tab, updating aria attributes
+  // and body theme class so CSS accent variables switch automatically.
   function activate(which) {
     S.$$('.tab').forEach(function (t) {
       t.setAttribute('aria-selected', t.dataset.target === which ? 'true' : 'false');
@@ -16,6 +18,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
+    // Wire each tab button to the activate helper.
     S.$$('.tab').forEach(function (t) {
       t.addEventListener('click', function () { activate(t.dataset.target); });
     });
@@ -26,13 +29,15 @@
     activate('module-a');
 
     // ---- theme toggle ----
+
+    // Syncs the button glyph and tooltip to the current html.light class state.
     var themeBtn = S.$('#theme-btn');
     function syncThemeBtn() {
       var isLight = document.documentElement.classList.contains('light');
-      themeBtn.textContent = isLight ? '☾' : '☀'; // ☾ dark / ☀ light
+      themeBtn.textContent = isLight ? '☾' : '☀'; // ☾ = switch to dark / ☀ = switch to light
       themeBtn.title = isLight ? 'Switch to dark mode' : 'Switch to light mode';
     }
-    syncThemeBtn(); // sync with class applied by the inline <head> script
+    syncThemeBtn(); // align with the class applied by the inline <head> anti-flash script
     themeBtn.addEventListener('click', function () {
       document.documentElement.classList.toggle('light');
       localStorage.setItem('lab-theme',
@@ -41,6 +46,8 @@
     });
 
     // ---- mute toggle ----
+
+    // Syncs the mute button glyph and tooltip to Lab.shared.sounds.muted.
     var muteBtn = S.$('#mute-btn');
     function syncMuteBtn() {
       muteBtn.textContent = Lab.shared.sounds.muted ? '🔇' : '🔊';

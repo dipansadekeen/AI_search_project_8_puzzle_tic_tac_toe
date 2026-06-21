@@ -26,16 +26,20 @@
       { key: 'prune', label: 'Pruning rate' }
     ]);
 
-    function G() { return Lab.moduleB.Game; } // always the active game
+    // Returns the currently active game model (may change when board size switches).
+    function G() { return Lab.moduleB.Game; }
 
     var board     = G().emptyBoard();
     var current   = 'X';
     var cells     = [];
     var busy      = false;
     var over      = false;
-    var snapshots = [];
+    var snapshots = []; // undo stack — each entry is { board, current }
 
     // ---- cell DOM ----
+
+    // Clears the board element and creates one div per cell for the active grid size.
+    // Toggles the .size-4 CSS class so the board resizes correctly.
     function buildCells() {
       var game = G();
       boardEl.innerHTML = '';
@@ -52,9 +56,14 @@
     }
 
     // ---- mode helpers ----
-    function mode()      { return modeSel.value; }
+
+    // Returns the currently selected game mode string ('hva', 'ava', or 'hvh').
+    function mode() { return modeSel.value; }
+
+    // Returns which side the human has chosen to play in HvA mode.
     function humanSide() { return sideSel ? sideSel.value : 'X'; }
 
+    // Returns a { X: bool, O: bool } map indicating which players are AI-controlled.
     function aiPlayers() {
       if (mode() === 'ava') return { X: true, O: true };
       if (mode() === 'hvh') return { X: false, O: false };
@@ -62,12 +71,15 @@
       return human === 'X' ? { X: false, O: true } : { X: true, O: false };
     }
 
+    // Returns the algorithm key ('alphabeta' or 'minimax') for the given player.
+    // In AvA mode each player has its own selector.
     function algoForPlayer(player) {
       if (mode() === 'ava') return player === 'X' ? algoXSel.value : algoOSel.value;
       return algoSel.value;
     }
 
-    // Depth-limited opts for 4×4; undefined (full search) for 3×3.
+    // Returns depth-limit opts for 4×4 boards; undefined triggers full search on 3×3.
+    // Adaptive depth: shallower early (more branches) and deeper as the board fills.
     function searchOpts(ai) {
       var game = G();
       if (game.size === 4) {
@@ -79,16 +91,22 @@
       return undefined;
     }
 
+    // Shows or hides the side-selector and algorithm rows based on the current mode.
     function updateModeUI() {
       var m = mode();
       if (sideRow)    sideRow.style.display    = (m === 'hva') ? '' : 'none';
       if (algoRow)    algoRow.style.display    = (m === 'hva') ? '' : 'none';
       if (algoAvaRow) algoAvaRow.style.display = (m === 'ava') ? '' : 'none';
+      // Undo only makes sense in HvA (mixed human/AI turn sequence).
       var undoBtn = S.$('#b-undo', root);
       if (undoBtn) undoBtn.style.display = (m === 'hva') ? '' : 'none';
     }
 
     // ---- board rendering ----
+
+    // Repaints all cells to match the current board state.
+    // Marks the most recently placed cell with a pop animation and winning cells
+    // with the win highlight class.
     function paint(placedIdx, winLine) {
       for (var i = 0; i < cells.length; i++) {
         var c = cells[i];
@@ -102,8 +120,11 @@
       }
     }
 
+    // Returns true when it is the AI's turn to move given the current player.
     function isAiTurn() { return aiPlayers()[current]; }
 
+    // Checks the board for a winner or a full board and updates the result display.
+    // Sets the `over` flag so further moves are blocked.
     function setResult() {
       var info = G().winnerInfo(board);
       if (info) {
@@ -121,6 +142,7 @@
       }
     }
 
+    // Records a move, advances the turn, pushes an undo snapshot, and checks for end.
     function place(idx, who) {
       board[idx] = who;
       current = G().other(who);
@@ -130,6 +152,7 @@
       setResult();
     }
 
+    // Handles a human click on a cell: validates legality and triggers the AI reply.
     function onCellClick(idx) {
       if (busy || over || board[idx] !== null) return;
       if (isAiTurn()) return;
@@ -138,11 +161,15 @@
     }
 
     // ---- AI ----
+
+    // Runs both the primary algorithm and its counterpart (Minimax or Alpha-Beta)
+    // so the pruning rate can be displayed accurately in the dashboard.
     function runAi() {
       var who  = current;
       var algo = algoForPlayer(who);
       var opts = searchOpts(who);
       var primary = Lab.moduleB[algo](board, who, opts);
+      // Always run both so the pruning rate stat reflects the real comparison.
       var mmNodes = algo === 'minimax'   ? primary.nodes : Lab.moduleB.minimax(board, who, opts).nodes;
       var abNodes = algo === 'alphabeta' ? primary.nodes : Lab.moduleB.alphabeta(board, who, opts).nodes;
       var pruning = (1 - abNodes / mmNodes) * 100;
@@ -154,6 +181,9 @@
       return primary.move;
     }
 
+    // If it is the AI's turn, locks the UI, fires runAi() after a short delay
+    // (so the browser can repaint first), then places the chosen move.
+    // Chains automatically in AvA mode by calling itself recursively when not over.
     function maybeAiMove() {
       if (over) return;
       if (!isAiTurn()) { statusEl.innerHTML = 'Your move, <b>' + current + '</b>.'; return; }
@@ -172,6 +202,9 @@
     }
 
     // ---- undo (HvA only) ----
+
+    // Pops snapshots until it lands on a state where it is the human's turn.
+    // This undoes both the human move and the AI reply in one action.
     function undo() {
       if (mode() !== 'hva' || busy) return;
       if (snapshots.length === 0) return;
@@ -193,6 +226,9 @@
     }
 
     // ---- save / load ----
+
+    // Serialises the full game state (board, mode, algorithm choices, snapshots)
+    // to a JSON file and triggers a browser download.
     function saveGame() {
       var game = G();
       var data = {
@@ -209,6 +245,7 @@
       URL.revokeObjectURL(url);
     }
 
+    // Parses a JSON game file, switches board size if necessary, and restores all state.
     function applyLoadedGame(text) {
       try {
         var data = JSON.parse(text);
@@ -218,7 +255,7 @@
         if (!Array.isArray(data.board) || data.board.length !== expectedLen) {
           statusEl.textContent = 'Invalid game file.'; return;
         }
-        // Switch board size if needed
+        // Rebuild the board if the loaded game uses a different grid size.
         if (gs !== G().size) {
           if (sizeSel) sizeSel.value = String(gs);
           Lab.moduleB.Game = Lab.moduleB.createGame(gs, k);
@@ -255,6 +292,9 @@
     }
 
     // ---- reset ----
+
+    // Clears the board, resets all state variables, and triggers the first AI move
+    // if the AI goes first in the current mode.
     function reset() {
       board     = G().emptyBoard();
       current   = 'X';
@@ -275,6 +315,7 @@
     if (algoXSel) algoXSel.addEventListener('change', function () { dashboard.reset(); });
     if (algoOSel) algoOSel.addEventListener('change', function () { dashboard.reset(); });
 
+    // Switching board size creates a new game model and rebuilds the cell grid.
     if (sizeSel) sizeSel.addEventListener('change', function () {
       var sz = parseInt(sizeSel.value, 10);
       Lab.moduleB.Game = Lab.moduleB.createGame(sz, sz);
@@ -301,7 +342,7 @@
       loadFileInput.value = '';
     });
 
-    // initial setup
+    // Initial setup: build cells, sync mode UI, start game.
     buildCells();
     updateModeUI();
     reset();

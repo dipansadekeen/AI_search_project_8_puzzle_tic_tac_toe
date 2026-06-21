@@ -21,17 +21,21 @@
       { key: 'length', label: 'Solution length' }
     ]);
 
-    function P() { return Lab.moduleA.Puzzle; } // always the active puzzle
+    // Returns the currently active puzzle model (may change when grid size switches).
+    function P() { return Lab.moduleA.Puzzle; }
 
-    var state = TEST_PUZZLE_3;
-    var tileMode = 'number';
-    var pieces   = null;
-    var moveCount = 0;
-    var solving   = false;
-    var tileEls   = {};        // numeric value → DOM element
-    var manualHistory = [];
+    var state        = TEST_PUZZLE_3;
+    var tileMode     = 'number';
+    var pieces       = null;
+    var moveCount    = 0;
+    var solving      = false;
+    var tileEls      = {};   // maps numeric tile value → DOM element
+    var manualHistory = [];  // snapshot stack for undo
 
     // ---- tile DOM ----
+
+    // Creates one DOM tile element per non-blank tile and attaches click handlers.
+    // Also resizes the board container and rebuilds the goal preview for the active grid.
     function buildTiles() {
       boardEl.innerHTML = '';
       tileEls = {};
@@ -49,6 +53,8 @@
       updateGoalPreview();
     }
 
+    // Rebuilds the small goal-state preview grid below the board.
+    // Regenerated whenever the grid size changes so it always shows the correct goal.
     function updateGoalPreview() {
       var miniGrid = S.$('.mini-grid', root);
       if (!miniGrid) return;
@@ -64,18 +70,23 @@
       }
     }
 
+    // Converts a flat board index to the CSS translate() string that positions a tile.
+    // Each cell is `--cell` px wide; the 6 px accounts for the board's padding.
     function idxToTransform(index) {
       var G = P().gridSize;
       var r = Math.floor(index / G), c = index % G;
       return 'translate(calc(' + c + ' * var(--cell)), calc(' + r + ' * var(--cell)))';
     }
 
+    // Returns true when board index `i` is adjacent (up/down/left/right) to `blank`.
     function isAdjToBlank(i, blank) {
       var G = P().gridSize;
       return Math.abs(Math.floor(i / G) - Math.floor(blank / G)) +
              Math.abs((i % G) - (blank % G)) === 1;
     }
 
+    // Syncs every tile element's position and visual state to `state`.
+    // Pass animate=false during instant resets to suppress the CSS transition.
     function render(animate) {
       var puzzle = P();
       if (!animate) boardEl.classList.add('no-anim');
@@ -101,12 +112,15 @@
         el.classList.toggle('locked', solving);
       }
       if (!animate) {
-        void boardEl.offsetWidth;
+        void boardEl.offsetWidth; // force reflow so removing no-anim re-enables transitions
         boardEl.classList.remove('no-anim');
       }
     }
 
     // ---- manual play ----
+
+    // Handles a tile click: validates adjacency, pushes undo snapshot, slides the tile,
+    // increments the move counter, and checks for a hand-solved completion.
     function onTileClick(val) {
       if (solving) return;
       var puzzle = P();
@@ -127,6 +141,7 @@
       }
     }
 
+    // Pops the most recent manual move from history and reverts to it.
     function undoManual() {
       if (solving || manualHistory.length === 0) return;
       state = manualHistory.pop();
@@ -137,6 +152,8 @@
     }
 
     // ---- status ----
+
+    // Updates the status bar. An explicit `msg` overrides the default idle text.
     function updateStatus(msg) {
       bannerEl.classList.remove('show');
       if (msg) { statusEl.innerHTML = msg; return; }
@@ -146,12 +163,16 @@
           (P().isGoal(state) ? 'goal state' : 'click a tile next to the gap');
     }
 
+    // Fades in the green solved banner with a completion message.
     function showSolved(text) {
       bannerEl.textContent = text;
       bannerEl.classList.add('show');
     }
 
     // ---- algorithm selector ----
+
+    // Greys out BFS and Dijkstra when the 4×4 grid is active (too slow for 15-puzzle).
+    // Auto-selects A* if the currently chosen algorithm becomes disabled.
     function updateAlgoOptions() {
       var is4 = P().gridSize === 4;
       var opts = algoSel.options;
@@ -166,6 +187,7 @@
       }
     }
 
+    // Maps an algorithm key to a human-readable display name for the dashboard.
     function algoLabel(a) {
       if (a === 'bfs')      return 'BFS (blind)';
       if (a === 'dijkstra') return 'Dijkstra';
@@ -175,6 +197,8 @@
     }
 
     // ---- playback ----
+
+    // Animation player instance; onStep re-renders the board one state at a time.
     var player = Lab.moduleA.createPlayer({
       onStep: function (st, i, total) {
         state = st;
@@ -190,6 +214,7 @@
       speed: function () { return 720 - parseInt(speedEl.value, 10); }
     });
 
+    // Locks or unlocks the UI during solution playback.
     function setSolving(on) {
       solving = on;
       S.$('#a-play',    root).disabled = on;
@@ -199,6 +224,8 @@
       if (!on) updateStatus();
     }
 
+    // Validates, runs the selected solver in a setTimeout (keeps the UI responsive),
+    // then populates the dashboard and starts playback.
     function solve() {
       bannerEl.classList.remove('show');
       var puzzle = P();
@@ -219,6 +246,7 @@
       }, 30);
     }
 
+    // Resets to a new random solvable state and clears image and history.
     function shuffle() {
       player.pause(); setSolving(false);
       state = P().randomSolvable();
@@ -228,6 +256,7 @@
       render(false); updateStatus();
     }
 
+    // Loads the standard depth-14 test puzzle (3×3) or a random puzzle (4×4).
     function loadTest() {
       player.pause(); setSolving(false);
       if (P().gridSize === 3) {
@@ -244,6 +273,9 @@
     }
 
     // ---- grid size switch ----
+
+    // Switches the active puzzle model, rebuilds tile elements, and resets state.
+    // Called when the user changes the grid size selector.
     function switchSize(gs) {
       player.pause(); setSolving(false);
       Lab.moduleA.Puzzle = Lab.moduleA.createPuzzle(gs);
@@ -259,6 +291,9 @@
     }
 
     // ---- save / load ----
+
+    // Serialises the current board state, move count, and grid size to a JSON file
+    // and triggers a browser download.
     function savePuzzle() {
       var data = { state: state, moveCount: moveCount, gridSize: P().gridSize };
       var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -268,6 +303,7 @@
       URL.revokeObjectURL(url);
     }
 
+    // Parses a JSON puzzle file, switches grid size if needed, and restores state.
     function applyLoadedPuzzle(text) {
       try {
         var data = JSON.parse(text);
@@ -309,7 +345,7 @@
       switchSize(parseInt(sizeSel.value, 10));
     });
 
-    // image upload
+    // Image upload: reads the file, slices it into G×G tiles, and switches to image mode.
     var fileInput = S.$('#a-file', root);
     S.$('#a-upload', root).addEventListener('click', function () { fileInput.click(); });
     fileInput.addEventListener('change', function (e) {
@@ -339,7 +375,7 @@
       loadFileInput.value = '';
     });
 
-    // initial setup
+    // Initial setup: build tiles, configure algorithm options, render, show status.
     buildTiles();
     updateAlgoOptions();
     render(false);

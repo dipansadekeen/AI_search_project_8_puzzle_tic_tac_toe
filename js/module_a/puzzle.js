@@ -10,15 +10,22 @@
     G = G || 3;
     var N = G * G;
 
-    function encode(v) { return v.toString(16); }  // 10 → 'a'
-    function decode(c) { return parseInt(c, 16); }  // 'a' → 10
+    // Converts a tile value to its single hex character (10 → 'a', 15 → 'f').
+    // Keeps state strings compact and uniform regardless of grid size.
+    function encode(v) { return v.toString(16); }
 
+    // Inverse of encode — converts a hex character back to an integer tile value.
+    function decode(c) { return parseInt(c, 16); }
+
+    // Pre-compute the goal string once: '1', '2', … up to N-1, then '0' for blank.
     var GOAL = (function () {
       var s = '';
       for (var i = 1; i < N; i++) s += encode(i);
       return s + '0'; // blank at end
     })();
 
+    // Returns all states reachable in one legal slide from `state`.
+    // Each neighbour is produced by swapping the blank with an adjacent tile.
     function neighbors(state) {
       var blank = state.indexOf('0');
       var r = Math.floor(blank / G), c = blank % G;
@@ -36,18 +43,22 @@
       return out;
     }
 
+    // Admissible heuristic: sum of per-tile Manhattan distances to goal cells.
+    // One move can reduce the sum by at most 1, so this never overestimates.
     function manhattan(state) {
       var total = 0;
       for (var i = 0; i < N; i++) {
         var v = decode(state[i]);
-        if (v === 0) continue;
-        var gi = v - 1; // goal index of tile v
+        if (v === 0) continue;          // blank does not count
+        var gi = v - 1;                 // goal index of tile v
         total += Math.abs(Math.floor(i / G) - Math.floor(gi / G)) +
                  Math.abs((i % G) - (gi % G));
       }
       return total;
     }
 
+    // Weaker heuristic: simply counts tiles that are not in their goal position.
+    // Admissible (each misplaced tile needs at least one move) but less informed.
     function misplaced(state) {
       var n = 0;
       for (var i = 0; i < N; i++) {
@@ -57,6 +68,9 @@
       return n;
     }
 
+    // Counts the number of inversions in the tile sequence (blank excluded).
+    // An inversion is a pair (a, b) where a appears before b but a > b.
+    // Used by isSolvable() to determine reachability of the goal.
     function inversions(state) {
       var tiles = [];
       for (var i = 0; i < N; i++) {
@@ -70,17 +84,22 @@
       return inv;
     }
 
+    // Determines whether `state` can reach the goal.
+    // Odd-width grid: solvable iff inversions is even.
+    // Even-width grid: solvable iff (inversions + blank's row from bottom) is odd.
     function isSolvable(state) {
       var inv = inversions(state);
-      if (G % 2 === 1) return inv % 2 === 0; // odd-width: inversions must be even
-      // Even-width: (inversions + blank row from bottom, 1-indexed) must be odd
+      if (G % 2 === 1) return inv % 2 === 0;
       var blank = state.indexOf('0');
       var rowFromBottom = G - Math.floor(blank / G);
       return (inv + rowFromBottom) % 2 === 1;
     }
 
+    // Returns true when `state` matches the pre-computed goal string exactly.
     function isGoal(state) { return state === GOAL; }
 
+    // Produces a random state that passes isSolvable() and is not already the goal.
+    // Uses Fisher-Yates shuffle; repeats until a valid starting position is found.
     function randomSolvable() {
       var arr = [];
       for (var i = 0; i < N; i++) arr.push(encode(i));
