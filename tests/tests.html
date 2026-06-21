@@ -27,6 +27,8 @@
   <script src="../js/module_a/solvers/bfs.js"></script>
   <script src="../js/module_a/solvers/dijkstra.js"></script>
   <script src="../js/module_a/solvers/astar.js"></script>
+  <script src="../js/module_a/solvers/greedy.js"></script>
+  <script src="../js/module_a/solvers/idastar.js"></script>
   <script src="../js/module_b/game.js"></script>
   <script src="../js/module_b/minimax.js"></script>
   <script src="../js/module_b/alphabeta.js"></script>
@@ -79,6 +81,22 @@
     check('returns a legal path ending at goal', legal(ast.path));
     check('expands far fewer nodes than BFS', ast.nodesExpanded < bfs.nodesExpanded / 5, '(A*=' + ast.nodesExpanded + ' BFS=' + bfs.nodesExpanded + ')');
     check('misplaced-tiles heuristic also solves optimally', len(Lab.moduleA.solvers.astar(TEST, P.misplaced)) === 14);
+
+    var grd = Lab.moduleA.solvers.greedy(TEST);
+    group('Greedy Best-First');
+    check('finds the goal state', grd.found);
+    check('returns a legal path ending at goal', legal(grd.path));
+    check('expands fewer nodes than BFS (heuristic guidance)', grd.nodesExpanded < bfs.nodesExpanded, '(greedy=' + grd.nodesExpanded + ' BFS=' + bfs.nodesExpanded + ')');
+    check('path length is at least optimal depth 14 (greedy may be non-optimal)', grd.path.length - 1 >= 14);
+    check('also works with misplaced-tiles heuristic', Lab.moduleA.solvers.greedy(TEST, P.misplaced).found);
+
+    var ida = Lab.moduleA.solvers.idastar(TEST);
+    group('IDA*');
+    check('finds optimal depth 14', len(ida) === 14, '(nodes=' + ida.nodesExpanded + ')');
+    check('returns a legal path ending at goal', legal(ida.path));
+    check('expands fewer nodes than BFS', ida.nodesExpanded < bfs.nodesExpanded, '(IDA*=' + ida.nodesExpanded + ' BFS=' + bfs.nodesExpanded + ')');
+    check('solution length matches A*', len(ida) === len(ast));
+    check('also works with misplaced-tiles heuristic', len(Lab.moduleA.solvers.idastar(TEST, P.misplaced)) === 14);
 
     var G = Lab.moduleB.Game;
     group('Tic-Tac-Toe model');

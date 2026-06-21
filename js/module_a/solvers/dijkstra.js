@@ -8,11 +8,10 @@
 // once and no stale-entry skip is required. If you ever generalize to
 // weighted moves, add `if (popped_priority > dist[s]) continue;` after pop.
 (function () {
-  var P = Lab.moduleA.Puzzle;
-  var reconstruct = Lab.moduleA.reconstruct;
-  var MinHeap = Lab.shared.MinHeap;
-
   Lab.moduleA.solvers.dijkstra = function (start) {
+    var P = Lab.moduleA.Puzzle;           // look up active puzzle at call time
+    var reconstruct = Lab.moduleA.reconstruct;
+    var MinHeap = Lab.shared.MinHeap;
     var t0 = performance.now();
     var dist = {}; dist[start] = 0;
     var cameFrom = {}; cameFrom[start] = null;

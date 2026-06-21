@@ -24,5 +24,20 @@
     Lab.moduleB.init(S.$('#module-b'));
 
     activate('module-a');
+
+    // ---- theme toggle ----
+    var themeBtn = S.$('#theme-btn');
+    function syncThemeBtn() {
+      var isLight = document.documentElement.classList.contains('light');
+      themeBtn.textContent = isLight ? '☾' : '☀'; // ☾ dark / ☀ light
+      themeBtn.title = isLight ? 'Switch to dark mode' : 'Switch to light mode';
+    }
+    syncThemeBtn(); // sync with class applied by the inline <head> script
+    themeBtn.addEventListener('click', function () {
+      document.documentElement.classList.toggle('light');
+      localStorage.setItem('lab-theme',
+        document.documentElement.classList.contains('light') ? 'light' : 'dark');
+      syncThemeBtn();
+    });
   });
 })();

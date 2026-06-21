@@ -9,11 +9,10 @@
 //
 // heuristic defaults to Manhattan; pass Lab.moduleA.Puzzle.misplaced to swap it.
 (function () {
-  var P = Lab.moduleA.Puzzle;
-  var reconstruct = Lab.moduleA.reconstruct;
-  var MinHeap = Lab.shared.MinHeap;
-
   Lab.moduleA.solvers.astar = function (start, heuristic) {
+    var P = Lab.moduleA.Puzzle;           // look up active puzzle at call time
+    var reconstruct = Lab.moduleA.reconstruct;
+    var MinHeap = Lab.shared.MinHeap;
     var h = heuristic || P.manhattan;
     var t0 = performance.now();
     var g = {}; g[start] = 0;

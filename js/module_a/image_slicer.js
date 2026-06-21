@@ -4,7 +4,8 @@
 // no image. Works fully offline via FileReader + canvas.
 (function () {
   // Returns a Promise resolving to an array of 9 data-URL strings.
-  Lab.moduleA.sliceImage = function (file) {
+  Lab.moduleA.sliceImage = function (file, gridSize) {
+    var G = gridSize || 3;
     return new Promise(function (resolve, reject) {
       if (!file) { reject(new Error('No file provided')); return; }
       var ok = /image\/(png|jpe?g|webp|gif|bmp)/i.test(file.type);
@@ -19,16 +20,16 @@
           var side = Math.min(img.width, img.height);
           var sx = (img.width - side) / 2;   // center crop
           var sy = (img.height - side) / 2;
-          var tile = 240;                      // output px per tile
+          var tile = G === 4 ? 180 : 240;    // output px per tile (smaller for 4×4)
           var pieces = [];
-          for (var r = 0; r < 3; r++) {
-            for (var c = 0; c < 3; c++) {
+          for (var r = 0; r < G; r++) {
+            for (var c = 0; c < G; c++) {
               var canvas = document.createElement('canvas');
               canvas.width = tile; canvas.height = tile;
               var ctx = canvas.getContext('2d');
               ctx.drawImage(
                 img,
-                sx + (c * side / 3), sy + (r * side / 3), side / 3, side / 3,
+                sx + (c * side / G), sy + (r * side / G), side / G, side / G,
                 0, 0, tile, tile
               );
               pieces.push(canvas.toDataURL('image/png'));

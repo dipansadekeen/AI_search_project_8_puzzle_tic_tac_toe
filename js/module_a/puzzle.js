@@ -1,94 +1,109 @@
-// 8-puzzle state model.
-// A state is a 9-character string, row-major, blank = '0'.
-// e.g. "813402765" is  [[8,1,3],[4,0,2],[7,6,5]].
-// Strings make states cheap to hash in Sets/Maps for visited tracking.
+// 8-puzzle / 15-puzzle state model — configurable grid size.
+// State: G*G single-character string, row-major, blank = '0'.
+// Tiles are hex-encoded: 1-9 → '1'-'9', 10-15 → 'a'-'f'.
+// 3×3 goal: '123456780'   |   4×4 goal: '123456789abcdef0'
+//
+// Lab.moduleA.Puzzle is the active puzzle object (default 3×3).
+// Switch size via: Lab.moduleA.Puzzle = Lab.moduleA.createPuzzle(4);
 (function () {
-  var GOAL = '123456780';
+  function createPuzzle(G) {
+    G = G || 3;
+    var N = G * G;
 
-  // Goal index for each tile value 1..8 (value v lives at index v-1 when solved).
-  function goalIndex(v) { return v - 1; }
+    function encode(v) { return v.toString(16); }  // 10 → 'a'
+    function decode(c) { return parseInt(c, 16); }  // 'a' → 10
 
-  // Generate successor states by sliding a tile into the blank.
-  // Returns [{ state, tile }] where `tile` is the value that moved.
-  function neighbors(state) {
-    var blank = state.indexOf('0');
-    var r = Math.floor(blank / 3), c = blank % 3;
-    var out = [];
-    var moves = [
-      [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]
-    ];
-    for (var i = 0; i < moves.length; i++) {
-      var nr = moves[i][0], nc = moves[i][1];
-      if (nr < 0 || nr > 2 || nc < 0 || nc > 2) continue;
-      var swap = nr * 3 + nc;
-      var arr = state.split('');
-      var movedTile = arr[swap];
-      arr[blank] = movedTile;
-      arr[swap] = '0';
-      out.push({ state: arr.join(''), tile: movedTile });
-    }
-    return out;
-  }
+    var GOAL = (function () {
+      var s = '';
+      for (var i = 1; i < N; i++) s += encode(i);
+      return s + '0'; // blank at end
+    })();
 
-  // Manhattan distance: sum over tiles of grid distance to goal cell.
-  function manhattan(state) {
-    var total = 0;
-    for (var i = 0; i < 9; i++) {
-      var v = state.charCodeAt(i) - 48;
-      if (v === 0) continue;
-      var gi = goalIndex(v);
-      var r = Math.floor(i / 3), c = i % 3;
-      var gr = Math.floor(gi / 3), gc = gi % 3;
-      total += Math.abs(r - gr) + Math.abs(c - gc);
-    }
-    return total;
-  }
-
-  // Misplaced-tiles heuristic (alternative admissible heuristic).
-  function misplaced(state) {
-    var count = 0;
-    for (var i = 0; i < 9; i++) {
-      var v = state.charCodeAt(i) - 48;
-      if (v !== 0 && v !== i + 1) count++;
-    }
-    return count;
-  }
-
-  // A 3x3 puzzle is solvable iff the inversion count (blank excluded) is even.
-  function inversions(state) {
-    var tiles = state.split('').map(Number).filter(function (v) { return v !== 0; });
-    var inv = 0;
-    for (var i = 0; i < tiles.length; i++)
-      for (var j = i + 1; j < tiles.length; j++)
-        if (tiles[i] > tiles[j]) inv++;
-    return inv;
-  }
-
-  function isSolvable(state) { return inversions(state) % 2 === 0; }
-  function isGoal(state) { return state === GOAL; }
-
-  // Random solvable state, optionally not already solved.
-  function randomSolvable() {
-    var arr = '012345678'.split('');
-    var state;
-    do {
-      for (var i = arr.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    function neighbors(state) {
+      var blank = state.indexOf('0');
+      var r = Math.floor(blank / G), c = blank % G;
+      var out = [];
+      var dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      for (var d = 0; d < dirs.length; d++) {
+        var nr = r + dirs[d][0], nc = c + dirs[d][1];
+        if (nr < 0 || nr >= G || nc < 0 || nc >= G) continue;
+        var swap = nr * G + nc;
+        var arr = state.split('');
+        var moved = arr[swap];
+        arr[blank] = moved; arr[swap] = '0';
+        out.push({ state: arr.join(''), tile: moved });
       }
-      state = arr.join('');
-    } while (!isSolvable(state) || state === GOAL);
-    return state;
+      return out;
+    }
+
+    function manhattan(state) {
+      var total = 0;
+      for (var i = 0; i < N; i++) {
+        var v = decode(state[i]);
+        if (v === 0) continue;
+        var gi = v - 1; // goal index of tile v
+        total += Math.abs(Math.floor(i / G) - Math.floor(gi / G)) +
+                 Math.abs((i % G) - (gi % G));
+      }
+      return total;
+    }
+
+    function misplaced(state) {
+      var n = 0;
+      for (var i = 0; i < N; i++) {
+        var v = decode(state[i]);
+        if (v !== 0 && v !== i + 1) n++;
+      }
+      return n;
+    }
+
+    function inversions(state) {
+      var tiles = [];
+      for (var i = 0; i < N; i++) {
+        var v = decode(state[i]);
+        if (v !== 0) tiles.push(v);
+      }
+      var inv = 0;
+      for (var i = 0; i < tiles.length; i++)
+        for (var j = i + 1; j < tiles.length; j++)
+          if (tiles[i] > tiles[j]) inv++;
+      return inv;
+    }
+
+    function isSolvable(state) {
+      var inv = inversions(state);
+      if (G % 2 === 1) return inv % 2 === 0; // odd-width: inversions must be even
+      // Even-width: (inversions + blank row from bottom, 1-indexed) must be odd
+      var blank = state.indexOf('0');
+      var rowFromBottom = G - Math.floor(blank / G);
+      return (inv + rowFromBottom) % 2 === 1;
+    }
+
+    function isGoal(state) { return state === GOAL; }
+
+    function randomSolvable() {
+      var arr = [];
+      for (var i = 0; i < N; i++) arr.push(encode(i));
+      var s;
+      do {
+        for (var i = arr.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+        }
+        s = arr.join('');
+      } while (!isSolvable(s) || s === GOAL);
+      return s;
+    }
+
+    return {
+      GOAL: GOAL, gridSize: G, size: N,
+      encode: encode, decode: decode,
+      neighbors: neighbors, manhattan: manhattan, misplaced: misplaced,
+      inversions: inversions, isSolvable: isSolvable, isGoal: isGoal,
+      randomSolvable: randomSolvable
+    };
   }
 
-  Lab.moduleA.Puzzle = {
-    GOAL: GOAL,
-    neighbors: neighbors,
-    manhattan: manhattan,
-    misplaced: misplaced,
-    inversions: inversions,
-    isSolvable: isSolvable,
-    isGoal: isGoal,
-    randomSolvable: randomSolvable
-  };
+  Lab.moduleA.createPuzzle = createPuzzle;
+  Lab.moduleA.Puzzle = createPuzzle(3); // default 3×3 — backward compatible
 })();

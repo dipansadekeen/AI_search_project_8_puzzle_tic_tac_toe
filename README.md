@@ -157,7 +157,7 @@ identical decision, a pruning rate of about **96.2%**. Both return a forced draw
 
 ## Credits
 
-Built by Dipan Sadekeen for the AI Search Lab assignment. Algorithms implemented
+Built by Md Shahrukh Islam for the AI Search Lab assignment. Algorithms implemented
 from standard formulations (Russell & Norvig, *Artificial Intelligence: A Modern
 Approach*). GenAI used as a coding assistant under the course policy; all logic
 verified via `tests/tests.html` and `verify.js`.

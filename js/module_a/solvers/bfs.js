@@ -7,10 +7,9 @@
 // Returns { found, path, nodesExpanded, frontierMax, timeMs }.
 //   nodesExpanded = states dequeued and expanded (neighbors generated).
 (function () {
-  var P = Lab.moduleA.Puzzle;
-  var reconstruct = Lab.moduleA.reconstruct;
-
   Lab.moduleA.solvers.bfs = function (start) {
+    var P = Lab.moduleA.Puzzle;           // look up active puzzle at call time
+    var reconstruct = Lab.moduleA.reconstruct;
     var t0 = performance.now();
     if (P.isGoal(start)) {
       return { found: true, path: [start], nodesExpanded: 0, frontierMax: 1, timeMs: 0 };

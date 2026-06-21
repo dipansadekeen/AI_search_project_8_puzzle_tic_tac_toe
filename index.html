@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Search Lab</title>
+  <!-- Apply saved theme before CSS paints to prevent a flash of dark mode -->
+  <script>if(localStorage.getItem('lab-theme')==='light')document.documentElement.classList.add('light');</script>
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/module_a.css">
   <link rel="stylesheet" href="css/module_b.css">
@@ -20,6 +22,7 @@
         <span class="swatch"></span>Tic-Tac-Toe
       </button>
     </nav>
+    <button class="btn theme-toggle" id="theme-btn" aria-label="Toggle light / dark mode" title="Switch to light mode">&#9728;</button>
   </header>
 
   <!-- ============ MODULE A: 8-PUZZLE ============ -->
@@ -53,6 +56,8 @@
               <option value="bfs">Blind search (BFS)</option>
               <option value="dijkstra">Dijkstra</option>
               <option value="astar" selected>A* (Manhattan)</option>
+              <option value="greedy">Greedy Best-First</option>
+              <option value="idastar">IDA*</option>
             </select>
             <button class="btn primary" id="a-play">Solve &amp; play</button>
           </div>
@@ -69,6 +74,13 @@
         <div class="card">
           <h3>Puzzle</h3>
           <div class="row">
+            <span class="btn-label">Grid</span>
+            <select class="btn" id="a-size">
+              <option value="3" selected>3&times;3 (8-puzzle)</option>
+              <option value="4">4&times;4 (15-puzzle)</option>
+            </select>
+          </div>
+          <div class="row">
             <button class="btn" id="a-shuffle">Shuffle (solvable)</button>
             <button class="btn" id="a-test">Load test puzzle</button>
           </div>
@@ -76,6 +88,12 @@
             <button class="btn" id="a-upload">Upload image&hellip;</button>
             <button class="btn" id="a-numbers">Use numbers</button>
             <input type="file" id="a-file" accept="image/png,image/jpeg">
+          </div>
+          <div class="row">
+            <button class="btn" id="a-undo">Undo move</button>
+            <button class="btn" id="a-save">Save&hellip;</button>
+            <button class="btn" id="a-load-btn">Load&hellip;</button>
+            <input type="file" id="a-load-file" accept=".json,application/json">
           </div>
         </div>
 
@@ -107,6 +125,13 @@
         <div class="card">
           <h3>Game</h3>
           <div class="row">
+            <span class="btn-label">Board</span>
+            <select class="btn" id="b-size">
+              <option value="3" selected>3&times;3 classic</option>
+              <option value="4">4&times;4 (k=4)</option>
+            </select>
+          </div>
+          <div class="row">
             <span class="btn-label">Mode</span>
             <select class="btn" id="b-mode">
               <option value="hva" selected>Human vs AI</option>
@@ -114,13 +139,38 @@
               <option value="hvh">Human vs Human</option>
             </select>
           </div>
-          <div class="row">
+          <div class="row" id="b-side-row">
+            <span class="btn-label">You play</span>
+            <select class="btn" id="b-side">
+              <option value="X">X &mdash; go first</option>
+              <option value="O">O &mdash; go second</option>
+            </select>
+          </div>
+          <div class="row" id="b-algo-row">
             <span class="btn-label">AI uses</span>
             <select class="btn" id="b-algo">
               <option value="alphabeta" selected>Alpha-Beta</option>
               <option value="minimax">Minimax</option>
             </select>
+          </div>
+          <div class="row" id="b-algo-ava-row" style="display:none">
+            <span class="btn-label">X uses</span>
+            <select class="btn" id="b-algo-x">
+              <option value="alphabeta" selected>Alpha-Beta</option>
+              <option value="minimax">Minimax</option>
+            </select>
+            <span class="btn-label">O uses</span>
+            <select class="btn" id="b-algo-o">
+              <option value="alphabeta">Alpha-Beta</option>
+              <option value="minimax">Minimax</option>
+            </select>
+          </div>
+          <div class="row">
             <button class="btn primary" id="b-reset">New game</button>
+            <button class="btn" id="b-undo">Undo</button>
+            <button class="btn" id="b-save">Save&hellip;</button>
+            <button class="btn" id="b-load-btn">Load&hellip;</button>
+            <input type="file" id="b-load-file" accept=".json,application/json">
           </div>
           <div class="row"><div class="status" id="b-status"></div></div>
         </div>
@@ -147,6 +197,8 @@
   <script src="js/module_a/solvers/bfs.js"></script>
   <script src="js/module_a/solvers/dijkstra.js"></script>
   <script src="js/module_a/solvers/astar.js"></script>
+  <script src="js/module_a/solvers/greedy.js"></script>
+  <script src="js/module_a/solvers/idastar.js"></script>
   <script src="js/module_a/image_slicer.js"></script>
   <script src="js/module_a/animation.js"></script>
   <script src="js/module_a/ui_a.js"></script>
