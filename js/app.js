@@ -39,5 +39,18 @@
         document.documentElement.classList.contains('light') ? 'light' : 'dark');
       syncThemeBtn();
     });
+
+    // ---- mute toggle ----
+    var muteBtn = S.$('#mute-btn');
+    function syncMuteBtn() {
+      muteBtn.textContent = Lab.shared.sounds.muted ? '🔇' : '🔊';
+      muteBtn.title = Lab.shared.sounds.muted ? 'Unmute sounds' : 'Mute sounds';
+    }
+    syncMuteBtn();
+    muteBtn.addEventListener('click', function () {
+      Lab.shared.sounds.muted = !Lab.shared.sounds.muted;
+      localStorage.setItem('lab-mute', Lab.shared.sounds.muted ? '1' : '0');
+      syncMuteBtn();
+    });
   });
 })();

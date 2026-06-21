@@ -108,11 +108,13 @@
       var info = G().winnerInfo(board);
       if (info) {
         over = true;
+        Lab.shared.sounds.win();
         resultEl.innerHTML = '<span class="' + info.winner.toLowerCase() + '">' +
           info.winner + '</span> wins.';
         paint(-1, info.line);
       } else if (G().isFull(board)) {
         over = true;
+        Lab.shared.sounds.draw();
         resultEl.textContent = 'Draw.';
       } else {
         resultEl.textContent = '';
@@ -123,6 +125,7 @@
       board[idx] = who;
       current = G().other(who);
       snapshots.push({ board: board.slice(), current: current });
+      Lab.shared.sounds.place();
       paint(idx, null);
       setResult();
     }

@@ -119,8 +119,12 @@
       state = arr.join('');
       moveCount++;
       render(true);
+      Lab.shared.sounds.tileMove();
       updateStatus();
-      if (puzzle.isGoal(state)) showSolved('Solved by hand in ' + moveCount + ' moves.');
+      if (puzzle.isGoal(state)) {
+        Lab.shared.sounds.solved();
+        showSolved('Solved by hand in ' + moveCount + ' moves.');
+      }
     }
 
     function undoManual() {
@@ -175,9 +179,12 @@
       onStep: function (st, i, total) {
         state = st;
         render(true);
+        Lab.shared.sounds.tileMove();
         statusEl.innerHTML = 'Step <b>' + i + '</b> / ' + total;
-        if (i === total && P().isGoal(state))
+        if (i === total && P().isGoal(state)) {
+          Lab.shared.sounds.solved();
           showSolved('Reached goal in ' + total + ' optimal moves.');
+        }
       },
       onDone: function () { setSolving(false); },
       speed: function () { return 720 - parseInt(speedEl.value, 10); }
