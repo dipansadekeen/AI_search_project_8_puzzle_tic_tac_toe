@@ -200,7 +200,7 @@ function makes the problem tractable while still playing strong moves.
 
 ## Credits
 
-Built by Md Shahrukh Islam for the AI Search Lab assignment. Algorithms implemented
+Built by Dipan Sadekeen and Md Shahrukh Islam for the AI Search Lab assignment. Algorithms implemented
 from standard formulations (Russell & Norvig, *Artificial Intelligence: A Modern
 Approach*). GenAI used as a coding assistant under the course policy; all logic
 verified via `tests/tests.html` and `verify.js`.
