@@ -1,8 +1,7 @@
 // Minimax for Tic-Tac-Toe.
 //
-// Default (opts omitted): full game-tree search with WIN_SCORE = 10.
-//   score = +(10 - depth) for AI win, -(10 - depth) for AI loss, 0 for draw.
-//   Depth-adjusted scoring makes the AI prefer faster wins / slower losses.
+// Default (opts omitted): full game-tree search.
+//   Evaluation: +10 (AI wins), -10 (opponent wins), 0 (draw) — per spec.
 //
 // Depth-limited (opts.maxDepth set): WIN_SCORE = 100000 so terminal states
 //   always dominate heuristic leaf scores. opts.evalFn(board, ai) is called
@@ -14,9 +13,9 @@
   function search(board, current, ai, depth, maxDepth, WIN_SCORE, G, counter, evalFn) {
     counter.nodes++;
     var w = G.winner(board);
-    if (w === ai)          return { score: WIN_SCORE - depth };
-    if (w === G.other(ai)) return { score: depth - WIN_SCORE };
-    if (G.isFull(board))   return { score: 0 };
+    if (w === ai)          return { score:  WIN_SCORE };  // +10 (AI wins)
+    if (w === G.other(ai)) return { score: -WIN_SCORE };  // -10 (opponent wins)
+    if (G.isFull(board))   return { score: 0 };           //   0 (draw)
     if (depth >= maxDepth) return { score: evalFn ? evalFn(board, ai) : 0 };
 
     var moves = G.legalMoves(board);

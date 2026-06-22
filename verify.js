@@ -20,6 +20,8 @@ const files = [
   'module_a/solvers/bfs.js',
   'module_a/solvers/dijkstra.js',
   'module_a/solvers/astar.js',
+  'module_a/solvers/greedy.js',
+  'module_a/solvers/idastar.js',
   'module_b/game.js',
   'module_b/minimax.js',
   'module_b/alphabeta.js',
@@ -51,18 +53,16 @@ check('goal is solvable', P.isSolvable(P.GOAL));
 const bfs = L.moduleA.solvers.bfs(TEST);
 const dij = L.moduleA.solvers.dijkstra(TEST);
 const ast = L.moduleA.solvers.astar(TEST);
+const grd = L.moduleA.solvers.greedy(TEST);
+const ida = L.moduleA.solvers.idastar(TEST);
 
 const bfsLen = bfs.path.length - 1;
 const dijLen = dij.path.length - 1;
 const astLen = ast.path.length - 1;
+const grdLen = grd.path.length - 1;
+const idaLen = ida.path.length - 1;
 
-check('BFS finds optimal depth 14', bfsLen === 14, '(len=' + bfsLen + ', nodes=' + bfs.nodesExpanded + ')');
-check('Dijkstra finds optimal depth 14', dijLen === 14, '(len=' + dijLen + ', nodes=' + dij.nodesExpanded + ')');
-check('A* finds optimal depth 14', astLen === 14, '(len=' + astLen + ', nodes=' + ast.nodesExpanded + ')');
-check('A* expands far fewer than BFS', ast.nodesExpanded < bfs.nodesExpanded / 5,
-  '(A*=' + ast.nodesExpanded + ' vs BFS=' + bfs.nodesExpanded + ')');
-
-// validate the BFS path is a legal sequence of moves ending at goal
+// Validates that every step in a path is a legal neighbor move ending at goal.
 function validPath(pth) {
   for (let i = 1; i < pth.length; i++) {
     const succ = P.neighbors(pth[i - 1]).map(s => s.state);
@@ -70,8 +70,26 @@ function validPath(pth) {
   }
   return pth[pth.length - 1] === P.GOAL;
 }
+
+check('BFS finds optimal depth 14', bfsLen === 14, '(len=' + bfsLen + ', nodes=' + bfs.nodesExpanded + ')');
+check('Dijkstra finds optimal depth 14', dijLen === 14, '(len=' + dijLen + ', nodes=' + dij.nodesExpanded + ')');
+check('A* finds optimal depth 14', astLen === 14, '(len=' + astLen + ', nodes=' + ast.nodesExpanded + ')');
+check('A* expands far fewer than BFS', ast.nodesExpanded < bfs.nodesExpanded / 5,
+  '(A*=' + ast.nodesExpanded + ' vs BFS=' + bfs.nodesExpanded + ')');
 check('BFS path is legal & ends at goal', validPath(bfs.path));
 check('A* path is legal & ends at goal', validPath(ast.path));
+
+check('Greedy finds the goal', grd.found, '(nodes=' + grd.nodesExpanded + ')');
+check('Greedy path is legal & ends at goal', validPath(grd.path));
+check('Greedy path is at least optimal length', grdLen >= 14, '(len=' + grdLen + ')');
+check('Greedy expands fewer nodes than BFS', grd.nodesExpanded < bfs.nodesExpanded,
+  '(greedy=' + grd.nodesExpanded + ' BFS=' + bfs.nodesExpanded + ')');
+
+check('IDA* finds optimal depth 14', idaLen === 14, '(nodes=' + ida.nodesExpanded + ')');
+check('IDA* path is legal & ends at goal', validPath(ida.path));
+check('IDA* solution length matches A*', idaLen === astLen);
+check('IDA* expands fewer nodes than BFS', ida.nodesExpanded < bfs.nodesExpanded,
+  '(IDA*=' + ida.nodesExpanded + ' BFS=' + bfs.nodesExpanded + ')');
 
 console.log('\n=== Module B: Tic-Tac-Toe (empty board, AI = X, first move) ===');
 const G = L.moduleB.Game;
@@ -101,6 +119,8 @@ console.log(JSON.stringify({
   bfs:      { nodesExpanded: bfs.nodesExpanded, solutionLength: bfsLen, timeMs: +bfs.timeMs.toFixed(2) },
   dijkstra: { nodesExpanded: dij.nodesExpanded, solutionLength: dijLen, timeMs: +dij.timeMs.toFixed(2) },
   astar:    { nodesExpanded: ast.nodesExpanded, solutionLength: astLen, timeMs: +ast.timeMs.toFixed(2) },
+  greedy:   { nodesExpanded: grd.nodesExpanded, solutionLength: grdLen, timeMs: +grd.timeMs.toFixed(2) },
+  idastar:  { nodesExpanded: ida.nodesExpanded, solutionLength: idaLen, timeMs: +ida.timeMs.toFixed(2) },
   moduleB_first_move: {
     minimax_nodes: mm.nodes,
     alphabeta_nodes: ab.nodes,

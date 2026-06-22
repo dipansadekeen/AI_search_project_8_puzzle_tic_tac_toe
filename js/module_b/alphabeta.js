@@ -6,8 +6,8 @@
   function search(board, current, ai, depth, alpha, beta, maxDepth, WIN_SCORE, G, counter, evalFn) {
     counter.nodes++;
     var w = G.winner(board);
-    if (w === ai)          return { score: WIN_SCORE - depth };
-    if (w === G.other(ai)) return { score: depth - WIN_SCORE };
+    if (w === ai)          return { score:  WIN_SCORE };
+    if (w === G.other(ai)) return { score: -WIN_SCORE };
     if (G.isFull(board))   return { score: 0 };
     if (depth >= maxDepth) return { score: evalFn ? evalFn(board, ai) : 0 };
 

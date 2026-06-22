@@ -175,8 +175,8 @@ footer.note {
   padding: 24px; font-family: var(--mono);
 }
 
-/* ---- theme toggle button ---- */
-.theme-toggle {
+/* ---- topbar icon buttons (theme toggle, mute toggle) ---- */
+.theme-toggle, .icon-btn {
   font-size: 17px;
   padding: 6px 10px;
   line-height: 1;

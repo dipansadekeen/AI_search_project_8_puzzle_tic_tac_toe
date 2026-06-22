@@ -80,7 +80,7 @@
 
     // Returns depth-limit opts for 4×4 boards; undefined triggers full search on 3×3.
     // Adaptive depth: shallower early (more branches) and deeper as the board fills.
-    function searchOpts(ai) {
+    function searchOpts() {
       var game = G();
       if (game.size === 4) {
         var emptyCells = 0;
@@ -162,22 +162,25 @@
 
     // ---- AI ----
 
-    // Runs both the primary algorithm and its counterpart (Minimax or Alpha-Beta)
-    // so the pruning rate can be displayed accurately in the dashboard.
+    // Runs the selected algorithm. For Alpha-Beta, also runs Minimax so the
+    // pruning rate can be reported as a comparison against plain Minimax.
     function runAi() {
       var who  = current;
       var algo = algoForPlayer(who);
-      var opts = searchOpts(who);
+      var opts = searchOpts();
       var primary = Lab.moduleB[algo](board, who, opts);
-      // Always run both so the pruning rate stat reflects the real comparison.
-      var mmNodes = algo === 'minimax'   ? primary.nodes : Lab.moduleB.minimax(board, who, opts).nodes;
-      var abNodes = algo === 'alphabeta' ? primary.nodes : Lab.moduleB.alphabeta(board, who, opts).nodes;
-      var pruning = (1 - abNodes / mmNodes) * 100;
+      var pruningText = 'N/A';
+
+      if (algo === 'alphabeta') {
+        var mmNodes = Lab.moduleB.minimax(board, who, opts).nodes;
+        var pruning = (1 - primary.nodes / mmNodes) * 100;
+        pruningText = pruning.toFixed(1) + '%';
+      }
 
       dashboard.set('algo',  algo === 'minimax' ? 'Minimax' : 'Alpha-Beta');
       dashboard.set('time',  S.fmtMs(primary.timeMs));
       dashboard.set('nodes', S.fmtInt(primary.nodes));
-      dashboard.set('prune', pruning.toFixed(1) + '%');
+      dashboard.set('prune', pruningText);
       return primary.move;
     }
 
